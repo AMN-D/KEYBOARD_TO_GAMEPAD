@@ -1,2 +1,7 @@
 # KEYBOARD_TO_GAMEPAD
-A python script based on python-evdev to use your spare keyboard as a gamepad. 
+
+
+Usage Run the script using python as root and choose your keyboard.
+
+Tested on
+- Arch (Hyprland)
