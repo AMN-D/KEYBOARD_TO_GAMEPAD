@@ -8,31 +8,47 @@ import evdev
 from evdev import UInput, ecodes as e
 import sys
 
-# Key mappings - Option A (WASD layout)
+# Key mappings - matching controller layout from image
 KEY_MAP = {
     # D-pad
-    e.KEY_UP: ('dpad', e.ABS_HAT0Y, -1),  # Up
-    e.KEY_DOWN: ('dpad', e.ABS_HAT0Y, 1),   # Down
-    e.KEY_LEFT: ('dpad', e.ABS_HAT0X, -1),  # Left
-    e.KEY_RIGHT: ('dpad', e.ABS_HAT0X, 1),   # Right
+    e.KEY_UP: ('dpad', e.ABS_HAT0Y, -1),      # Up
+    e.KEY_DOWN: ('dpad', e.ABS_HAT0Y, 1),     # Down
+    e.KEY_LEFT: ('dpad', e.ABS_HAT0X, -1),    # Left
+    e.KEY_RIGHT: ('dpad', e.ABS_HAT0X, 1),    # Right
+    
+    # Left analog stick
+    e.KEY_W: ('analog', e.ABS_Y, -32768),     # Up
+    e.KEY_S: ('analog', e.ABS_Y, 32767),      # Down
+    e.KEY_A: ('analog', e.ABS_X, -32768),     # Left
+    e.KEY_D: ('analog', e.ABS_X, 32767),      # Right
+    
+    # Right analog stick
+    e.KEY_T: ('analog', e.ABS_RY, -32768),    # Up
+    e.KEY_G: ('analog', e.ABS_RY, 32767),     # Down
+    e.KEY_F: ('analog', e.ABS_RX, -32768),    # Left
+    e.KEY_H: ('analog', e.ABS_RX, 32767),     # Right
     
     # Face buttons
-    e.KEY_K: ('btn', e.BTN_SOUTH),    # A button
-    e.KEY_L: ('btn', e.BTN_EAST),     # B button
-    e.KEY_J: ('btn', e.BTN_WEST),     # X button
-    e.KEY_I: ('btn', e.BTN_NORTH),    # Y button
+    e.KEY_K: ('btn', e.BTN_SOUTH),            # Cross (A)
+    e.KEY_L: ('btn', e.BTN_EAST),             # Circle (B)
+    e.KEY_J: ('btn', e.BTN_WEST),             # Square (X)
+    e.KEY_I: ('btn', e.BTN_NORTH),            # Triangle (Y)
     
     # Shoulder buttons
-    e.KEY_R: ('btn', e.BTN_TL),  # L1
-    e.KEY_O: ('btn', e.BTN_TR),   # R1
+    e.KEY_Q: ('btn', e.BTN_TL),               # L1
+    e.KEY_E: ('btn', e.BTN_TR),               # R1
     
-    # Triggers (using Z and C keys)
-    e.KEY_W: ('trigger', e.ABS_Z, 255),  # L2
-    e.KEY_R: ('trigger', e.ABS_RZ, 255), # R2
+    # Triggers
+    e.KEY_1: ('trigger', e.ABS_Z, 255),       # L2
+    e.KEY_3: ('trigger', e.ABS_RZ, 255),      # R2
+    
+    # Analog stick buttons
+    e.KEY_2: ('btn', e.BTN_THUMBL),           # L3
+    e.KEY_4: ('btn', e.BTN_THUMBR),           # R3
     
     # Start/Select
-    e.KEY_SPACE: ('btn', e.BTN_SELECT),    # Select
-    e.KEY_ENTER: ('btn', e.BTN_START),   # Start
+    e.KEY_BACKSPACE: ('btn', e.BTN_SELECT),   # Select
+    e.KEY_ENTER: ('btn', e.BTN_START),        # Start
 }
 
 def list_keyboards():
@@ -117,9 +133,10 @@ def main():
     print("✓ Virtual gamepad created")
     print("\n=== Ready! Press Ctrl+C to stop ===\n")
     
-    # Track state for D-pad and triggers
+    # Track state for D-pad, triggers, and analog sticks
     dpad_state = {e.ABS_HAT0X: 0, e.ABS_HAT0Y: 0}
     trigger_state = {e.ABS_Z: 0, e.ABS_RZ: 0}
+    analog_state = {e.ABS_X: 0, e.ABS_Y: 0, e.ABS_RX: 0, e.ABS_RY: 0}
     
     try:
         for event in keyboard.read_loop():
@@ -155,6 +172,19 @@ def main():
                         trigger_state[axis] = 0
                     
                     gamepad.write(e.EV_ABS, axis, trigger_state[axis])
+                
+                elif map_type == 'analog':
+                    # Analog stick
+                    axis = mapping[1]
+                    direction_val = mapping[2]
+                    
+                    if event.value == 1:  # Key pressed
+                        analog_state[axis] = direction_val
+                    elif event.value == 0:  # Key released
+                        if analog_state[axis] == direction_val:
+                            analog_state[axis] = 0
+                    
+                    gamepad.write(e.EV_ABS, axis, analog_state[axis])
                 
                 gamepad.syn()
     
